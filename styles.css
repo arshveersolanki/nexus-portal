@@ -624,11 +624,14 @@ section {
   display: flex;
   gap: 8px;
   z-index: 10;
-  opacity: 0;
+  /* Always visible: hover-only controls are undiscoverable, and unreachable
+     entirely on touch devices. */
+  opacity: 0.65;
   transition: opacity var(--transition-fast);
 }
 
-.stream-viewport:hover .stream-toolbar {
+.stream-viewport:hover .stream-toolbar,
+.stream-toolbar:focus-within {
   opacity: 1;
 }
 

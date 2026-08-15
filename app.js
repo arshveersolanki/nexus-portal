@@ -316,20 +316,41 @@ function launchMoonlight() {
 }
 
 // --- Fullscreen ---
+// Works with or without a live stream: with one we fullscreen the stream
+// overlay, otherwise we fullscreen the portal itself. When the portal is
+// embedded (e.g. in a Google Site) this escapes the embed box and fills the
+// whole screen rather than just the frame.
 function goFullscreen() {
-  if (!streamConnected || !currentStreamUrl) return;
-
   const overlay = document.getElementById('fullscreenOverlay');
   const frame = document.getElementById('fullscreenFrame');
 
-  frame.src = currentStreamUrl;
-  overlay.classList.add('active');
-  document.body.style.overflow = 'hidden';
-
-  // Also try native fullscreen API
-  if (overlay.requestFullscreen) {
-    overlay.requestFullscreen();
+  let target;
+  if (streamConnected && currentStreamUrl) {
+    frame.src = currentStreamUrl;
+    overlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    target = overlay;
+  } else {
+    target = document.documentElement;
   }
+
+  const request = target.requestFullscreen || target.webkitRequestFullscreen;
+  if (!request) {
+    openStandaloneTab();
+    return;
+  }
+
+  Promise.resolve(request.call(target)).catch(() => {
+    // A parent frame's permissions policy can refuse fullscreen. A top-level
+    // tab is never subject to it, so fall back to opening the portal directly.
+    if (target === overlay) exitFullscreen();
+    openStandaloneTab();
+  });
+}
+
+// Escape hatch when fullscreen is refused by an embedding page.
+function openStandaloneTab() {
+  window.open(window.location.href, '_blank', 'noopener');
 }
 
 function exitFullscreen() {
