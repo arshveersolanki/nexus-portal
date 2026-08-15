@@ -13,10 +13,11 @@
   <!-- Navigation -->
   <nav class="nav" id="nav">
     <div class="container nav-inner">
-      <a href="#" class="nav-logo">NEXU<span>S</span></a>
+      <a href="#" target="_self" class="nav-logo">NEXU<span>S</span></a>
       <ul class="nav-links" id="navLinks">
-        <li><a href="#games">Games</a></li>
-        <li><a href="#stream">Remote Play</a></li>
+        <li><a href="#games" target="_self">Games</a></li>
+        <li><a href="#apps" target="_self">Web Apps</a></li>
+        <li><a href="#stream" target="_self">Remote Play</a></li>
         <li><a href="setup-guide.html">Setup Guide</a></li>
       </ul>
       <div class="nav-status">
@@ -40,10 +41,10 @@
         <span>32GB DDR5</span>
       </div>
       <div class="hero-actions">
-        <a href="#stream" class="btn btn-primary btn-lg">
+        <a href="#stream" target="_self" class="btn btn-primary btn-lg">
           <span>🌐</span> Stream in Browser
         </a>
-        <a href="#moonlight" class="btn btn-secondary btn-lg">
+        <a href="#moonlight" target="_self" class="btn btn-secondary btn-lg">
           <span>🚀</span> Use Moonlight
         </a>
       </div>
@@ -68,6 +69,20 @@
     </div>
   </section>
 
+  <!-- Web Apps -->
+  <section id="apps">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-label">Web Apps</div>
+        <h2 class="section-title">Open on Your PC</h2>
+        <p class="section-desc">Sites you keep handy on the streamed desktop. Start Remote Play, then open one inside the stream — they run on your PC, not here.</p>
+      </div>
+      <div class="games-grid" id="appsGrid">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+  </section>
+
   <!-- Remote Play / Stream -->
   <section class="stream-section" id="stream">
     <div class="container">
@@ -82,15 +97,13 @@
         <div class="stream-controls">
           <h3>⚡ Connect</h3>
 
-          <div class="input-row">
-            <div class="input-group">
-              <label for="hostIp">Host IP</label>
-              <input type="text" id="hostIp" placeholder="192.168.1.100">
-            </div>
-            <div class="input-group">
-              <label for="hostPort">Port</label>
-              <input type="text" id="hostPort" placeholder="8080" value="8080">
-            </div>
+          <div class="input-group">
+            <label for="hostIp">Host or URL</label>
+            <input type="text" id="hostIp" placeholder="pc.your-tailnet.ts.net">
+          </div>
+          <div class="input-group">
+            <label for="hostPort">Port <span style="color: var(--text-tertiary); font-weight: 400;">(LAN IP only)</span></label>
+            <input type="text" id="hostPort" placeholder="8080" value="8080">
           </div>
 
           <div class="input-group">
@@ -149,7 +162,7 @@
             <li>NVENC hardware encoding via 4070 Super</li>
             <li>Requires Neko server on your PC</li>
           </ul>
-          <a href="#stream" class="btn btn-primary btn-sm">Connect Now</a>
+          <a href="#stream" target="_self" class="btn btn-primary btn-sm">Connect Now</a>
         </div>
 
         <!-- Moonlight Card -->

@@ -70,6 +70,24 @@ const GAMES = [
   },
 ];
 
+// --- Web Apps (opened on the streamed desktop, not embedded here) ---
+const WEB_APPS = [
+  {
+    title: 'Gemini',
+    subtitle: 'Google AI',
+    url: 'https://gemini.google.com/',
+    icon: '✦',
+    gradient: 'linear-gradient(135deg, hsl(215, 70%, 40%), hsl(275, 55%, 42%))',
+  },
+  {
+    title: 'Claude',
+    subtitle: 'Anthropic',
+    url: 'https://claude.ai/',
+    icon: '✳',
+    gradient: 'linear-gradient(135deg, hsl(20, 65%, 42%), hsl(30, 55%, 30%))',
+  },
+];
+
 // --- State ---
 let streamConnected = false;
 let currentStreamUrl = '';
@@ -77,10 +95,42 @@ let currentStreamUrl = '';
 // --- DOM Ready ---
 document.addEventListener('DOMContentLoaded', () => {
   renderGames(GAMES);
+  renderApps();
   setupSearch();
   setupMobileNav();
   setupScrollAnimations();
 });
+
+// --- Render Web Apps ---
+function renderApps() {
+  const grid = document.getElementById('appsGrid');
+  if (!grid) return;
+
+  grid.innerHTML = WEB_APPS.map((app, i) => `
+    <div class="game-card animate-in" style="animation-delay: ${i * 0.05}s">
+      <div class="game-card-banner" style="background: ${app.gradient}">
+        <span class="game-icon">${app.icon}</span>
+      </div>
+      <div class="game-card-body">
+        <div class="game-card-title">${app.title}</div>
+        <div class="game-card-platform">${app.subtitle}</div>
+        <div class="game-card-actions">
+          <button class="btn btn-primary btn-sm" onclick="openApp('${app.url}')">
+            Open
+          </button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// Opens the site in a new top-level tab. When you're viewing the portal through
+// the streamed desktop, do this inside the stream — the site then runs on your
+// PC, where it isn't blocked. (Neither Gemini nor Claude allows framing, so
+// they can't be embedded in the portal itself.)
+function openApp(url) {
+  window.open(url, '_blank', 'noopener');
+}
 
 // --- Render Games ---
 function renderGames(games) {
@@ -144,34 +194,46 @@ function toggleConnection() {
     return;
   }
 
-  const ip = document.getElementById('hostIp').value.trim();
+  const host = document.getElementById('hostIp').value.trim();
   const port = document.getElementById('hostPort').value.trim() || '8080';
   const password = document.getElementById('streamPassword').value.trim();
 
-  if (!ip) {
+  if (!host) {
     shakeElement(document.getElementById('hostIp'));
     return;
   }
 
-  // Build connection URL
-  let url = `http://${ip}:${port}`;
-  if (password) {
-    url += `?pwd=${encodeURIComponent(password)}`;
-  }
+  const url = buildStreamUrl(host, port, password);
 
-  // A page served over HTTPS cannot embed an http:// frame: browsers block it as
-  // active mixed content with no prompt and no override. Say so instead of
-  // starting a load that can never complete.
-  if (window.location.protocol === 'https:') {
+  // A page served over HTTPS cannot embed an http:// frame: the browser blocks
+  // it as active mixed content with no prompt and no override. A LAN IP can only
+  // be reached over http://, so from an embedded (HTTPS) portal it can never
+  // load — say so instead of starting a load that will silently hang.
+  if (window.location.protocol === 'https:' && url.startsWith('http://')) {
     showStreamError(
       `Blocked: this page is served over HTTPS, so the browser will not embed the ` +
-      `insecure stream at http://${ip}:${port}. Open the portal locally, or expose ` +
-      `Neko over HTTPS (Tailscale Funnel or Cloudflare Tunnel) and use that hostname.`
+      `insecure LAN stream at ${url.split('?')[0]}. Expose your PC over HTTPS ` +
+      `(Tailscale Funnel or Cloudflare Tunnel) and enter that https:// hostname instead.`
     );
     return;
   }
 
   connect(url);
+}
+
+// Accepts either a full URL (https://pc.your-tailnet.ts.net), a bare hostname
+// (defaults to https:// — tunnels serve on 443, so no port needed), or a LAN
+// IP (defaults to http://IP:port for local use).
+function buildStreamUrl(host, port, password) {
+  let base;
+  if (/^https?:\/\//i.test(host)) {
+    base = host.replace(/\/+$/, '');
+  } else if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host)) {
+    base = `http://${host}:${port}`;
+  } else {
+    base = `https://${host.replace(/\/+$/, '')}`;
+  }
+  return password ? `${base}?pwd=${encodeURIComponent(password)}` : base;
 }
 
 function showStreamError(message) {

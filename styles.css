@@ -2,7 +2,10 @@
    NEXUS Gaming Portal — Design System
    ============================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+/* Fonts are intentionally NOT fetched from the network: this file must be
+   fully self-contained so it renders when embedded on a locked-down network.
+   The --font-sans / --font-mono stacks below fall back to the OS UI + mono
+   faces, which are close enough and cost zero external requests. */
 
 /* --- Custom Properties --- */
 :root {
