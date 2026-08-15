@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="NEXUS Setup Guide — Configure browser-based game streaming with Neko and WebRTC.">
+  <title>NEXUS — Setup Guide</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>">
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="nav">
+    <div class="container nav-inner">
+      <a href="index.html" class="nav-logo">NEXU<span>S</span></a>
+      <ul class="nav-links">
+        <li><a href="index.html#games">Games</a></li>
+        <li><a href="index.html#stream">Remote Play</a></li>
+        <li><a href="setup-guide.html">Setup Guide</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <div class="container guide-content">
+    <a href="index.html" class="back-link">← Back to Portal</a>
+
+    <div class="section-header">
+      <div class="section-label">Setup Guide</div>
+      <h1 class="section-title">Browser Streaming Setup</h1>
+      <p class="section-desc">
+        You already have Sunshine + Moonlight working. This guide covers setting up 
+        <strong>Neko</strong> for browser-based streaming — so you can play from any device without installing an app.
+      </p>
+    </div>
+
+    <!-- Step 1: Install Docker -->
+    <div class="guide-step">
+      <div class="guide-step-number">Step 1</div>
+      <h3>Install Docker on Your PC</h3>
+      <p>Neko runs as a Docker container. You can run it on either your <strong>Windows</strong> (2TB 990 Pro) or <strong>Ubuntu</strong> boot drive.</p>
+      
+      <p style="margin-top: 16px; font-weight: 600; color: var(--text-primary);">On Windows:</p>
+      <ul>
+        <li>Download and install <a href="https://www.docker.com/products/docker-desktop/" target="_blank" rel="noopener">Docker Desktop for Windows</a></li>
+        <li>Enable WSL 2 backend when prompted</li>
+        <li>Restart your PC after installation</li>
+      </ul>
+
+      <p style="margin-top: 16px; font-weight: 600; color: var(--text-primary);">On Ubuntu:</p>
+      <code>sudo apt update && sudo apt install -y docker.io docker-compose
+sudo usermod -aG docker $USER
+# Log out and back in after this</code>
+    </div>
+
+    <!-- Step 2: Run Neko -->
+    <div class="guide-step">
+      <div class="guide-step-number">Step 2</div>
+      <h3>Run Neko (WebRTC Streaming Server)</h3>
+      <p>Neko turns your desktop into a browser-accessible stream via WebRTC. Run this command to start it:</p>
+
+      <p style="margin-top: 16px; font-weight: 600; color: var(--text-primary);">Basic command (streams full desktop):</p>
+      <code>docker run -d --name neko \
+  -p 8080:8080 \
+  -p 52000-52100:52000-52100/udp \
+  -e NEKO_SCREEN=1920x1080@60 \
+  -e NEKO_PASSWORD=your_password \
+  -e NEKO_PASSWORD_ADMIN=your_admin_password \
+  -e NEKO_EPR=52000-52100 \
+  -e NEKO_ICELITE=true \
+  --shm-size=2g \
+  --restart unless-stopped \
+  ghcr.io/m1k1o/neko/nvidia:latest</code>
+
+      <p style="margin-top: 16px;">
+        <strong>Key settings:</strong>
+      </p>
+      <ul>
+        <li>Port <span class="inline-code">8080</span> — the web UI (this is what NEXUS connects to)</li>
+        <li>Ports <span class="inline-code">52000-52100/udp</span> — WebRTC media transport</li>
+        <li><span class="inline-code">NEKO_SCREEN</span> — match your monitor resolution. Your 4070 Super can handle 1440p easily: use <span class="inline-code">2560x1440@60</span></li>
+        <li><span class="inline-code">NEKO_PASSWORD</span> — this is the password you'll enter in the NEXUS portal</li>
+        <li>The <span class="inline-code">nvidia</span> tag uses GPU acceleration with your RTX 4070 Super</li>
+      </ul>
+
+      <p style="margin-top: 16px; font-weight: 600; color: var(--text-primary);">For GPU-accelerated encoding (recommended):</p>
+      <p>Install the <a href="https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html" target="_blank" rel="noopener">NVIDIA Container Toolkit</a> first, then add <span class="inline-code">--gpus all</span> to the docker command:</p>
+      <code>docker run -d --name neko \
+  --gpus all \
+  -p 8080:8080 \
+  -p 52000-52100:52000-52100/udp \
+  -e NEKO_SCREEN=1920x1080@60 \
+  -e NEKO_PASSWORD=your_password \
+  -e NEKO_PASSWORD_ADMIN=your_admin_password \
+  -e NEKO_EPR=52000-52100 \
+  -e NEKO_ICELITE=true \
+  -e NEKO_HWENC=nvenc \
+  --shm-size=2g \
+  --restart unless-stopped \
+  ghcr.io/m1k1o/neko/nvidia:latest</code>
+    </div>
+
+    <!-- Step 3: Connect from NEXUS -->
+    <div class="guide-step">
+      <div class="guide-step-number">Step 3</div>
+      <h3>Connect from NEXUS Portal</h3>
+      <p>Once Neko is running:</p>
+      <ul>
+        <li>Open the NEXUS portal (<a href="index.html#stream">Remote Play section</a>)</li>
+        <li>Enter your PC's <strong>local IP</strong> (e.g., <span class="inline-code">192.168.1.100</span>) — find it with <span class="inline-code">ipconfig</span> on Windows or <span class="inline-code">ip a</span> on Ubuntu</li>
+        <li>Port: <span class="inline-code">8080</span> (default)</li>
+        <li>Password: whatever you set in <span class="inline-code">NEKO_PASSWORD</span></li>
+        <li>Hit <strong>Connect</strong> — you should see your desktop streaming in the browser</li>
+      </ul>
+      <p style="margin-top: 12px;">From there, you can open any game (Fortnite, Valorant, etc.) directly in the streamed desktop and play from your browser.</p>
+    </div>
+
+    <!-- Step 4: Remote Access -->
+    <div class="guide-step">
+      <div class="guide-step-number">Step 4</div>
+      <h3>Remote Access (Outside Your Network)</h3>
+      <p>To stream games when you're away from home, you need to expose the Neko server to the internet. There are two approaches:</p>
+
+      <p style="margin-top: 16px; font-weight: 600; color: var(--text-primary);">Option A: Port Forwarding (simpler)</p>
+      <ul>
+        <li>Log into your router (usually <span class="inline-code">192.168.1.1</span>)</li>
+        <li>Forward port <span class="inline-code">8080</span> (TCP) and <span class="inline-code">52000-52100</span> (UDP) to your PC's local IP</li>
+        <li>Use your public IP to connect (find it at <a href="https://whatismyip.com" target="_blank" rel="noopener">whatismyip.com</a>)</li>
+        <li>Consider using a dynamic DNS service (like <a href="https://www.noip.com/" target="_blank" rel="noopener">No-IP</a>) if your public IP changes</li>
+      </ul>
+
+      <p style="margin-top: 16px; font-weight: 600; color: var(--text-primary);">Option B: Tailscale / WireGuard VPN (more secure)</p>
+      <ul>
+        <li>Install <a href="https://tailscale.com/" target="_blank" rel="noopener">Tailscale</a> on both your PC and the device you're streaming from</li>
+        <li>Use the Tailscale IP (e.g., <span class="inline-code">100.x.x.x</span>) instead of your public IP</li>
+        <li>No port forwarding needed — encrypted tunnel through NAT</li>
+        <li>This is the recommended approach for security</li>
+      </ul>
+    </div>
+
+    <!-- Step 5: Performance Tips -->
+    <div class="guide-step">
+      <div class="guide-step-number">Step 5</div>
+      <h3>Performance Tips for Your 4070 Super</h3>
+      <p>Your hardware is more than capable. Here are some optimizations:</p>
+      <ul>
+        <li><strong>Use NVENC encoding</strong> — your 4070 Super's dedicated encoder handles streaming with zero FPS impact on games</li>
+        <li><strong>Ethernet &gt; WiFi</strong> — use a wired connection on your PC for the lowest latency</li>
+        <li><strong>Bitrate</strong> — for 1080p60, use 15-25 Mbps. For 1440p60, use 25-40 Mbps</li>
+        <li><strong>Resolution</strong> — match Neko's <span class="inline-code">NEKO_SCREEN</span> to your game's resolution to avoid scaling</li>
+        <li><strong>Shared memory</strong> — increase <span class="inline-code">--shm-size</span> to <span class="inline-code">4g</span> if you experience frame drops</li>
+        <li><strong>For Fortnite specifically</strong> — use Performance Mode in Fortnite settings to maximize FPS headroom while streaming</li>
+      </ul>
+    </div>
+
+    <!-- Troubleshooting -->
+    <div class="guide-step">
+      <div class="guide-step-number">Help</div>
+      <h3>Troubleshooting</h3>
+      <ul>
+        <li><strong>Can't connect?</strong> — Make sure Docker is running and Neko container is up: <span class="inline-code">docker ps</span></li>
+        <li><strong>Black screen?</strong> — Increase <span class="inline-code">--shm-size</span> to <span class="inline-code">4g</span> or <span class="inline-code">8g</span></li>
+        <li><strong>High latency?</strong> — Ensure <span class="inline-code">NEKO_ICELITE=true</span> is set, and use Ethernet</li>
+        <li><strong>No GPU acceleration?</strong> — Verify NVIDIA Container Toolkit: <span class="inline-code">docker run --gpus all nvidia/cuda:12.0-base nvidia-smi</span></li>
+        <li><strong>Audio issues?</strong> — Neko handles audio through WebRTC automatically. Check browser permissions</li>
+        <li><strong>Neko docs:</strong> <a href="https://github.com/m1k1o/neko" target="_blank" rel="noopener">github.com/m1k1o/neko</a></li>
+      </ul>
+    </div>
+
+    <div style="text-align: center; padding: 40px 0 80px;">
+      <a href="index.html#stream" class="btn btn-primary btn-lg">← Back to Stream</a>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <p>NEXUS — RTX 4070 Super · Ryzen 7 7700X · 32GB DDR5</p>
+    </div>
+  </footer>
+</body>
+</html>

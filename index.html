@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="NEXUS — Stream your PC games to any device. Browser-based game streaming powered by Sunshine + WebRTC.">
+  <title>NEXUS — Game Streaming Portal</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>">
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="nav" id="nav">
+    <div class="container nav-inner">
+      <a href="#" class="nav-logo">NEXU<span>S</span></a>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="#games">Games</a></li>
+        <li><a href="#stream">Remote Play</a></li>
+        <li><a href="setup-guide.html">Setup Guide</a></li>
+      </ul>
+      <div class="nav-status">
+        <div class="status-dot" id="statusDot"></div>
+        <span id="statusText">Ready</span>
+      </div>
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">☰</button>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero" id="hero">
+    <div class="container">
+      <h1 class="hero-tagline">Your games. Anywhere.</h1>
+      <p class="hero-subtitle">Stream your PC games to any device with zero hassle. Connect from any browser — no app required.</p>
+      <div class="hero-specs">
+        <span>RTX 4070 Super</span>
+        <span class="spec-divider"></span>
+        <span>Ryzen 7 7700X</span>
+        <span class="spec-divider"></span>
+        <span>32GB DDR5</span>
+      </div>
+      <div class="hero-actions">
+        <a href="#stream" class="btn btn-primary btn-lg">
+          <span>🌐</span> Stream in Browser
+        </a>
+        <a href="#moonlight" class="btn btn-secondary btn-lg">
+          <span>🚀</span> Use Moonlight
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Games -->
+  <section id="games">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-label">Library</div>
+        <h2 class="section-title">Your Games</h2>
+        <p class="section-desc">Launch any game directly from your browser or via Moonlight.</p>
+      </div>
+      <div class="search-bar">
+        <span class="search-icon">⌕</span>
+        <input type="text" id="gameSearch" placeholder="Search games...">
+      </div>
+      <div class="games-grid" id="gamesGrid">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+  </section>
+
+  <!-- Remote Play / Stream -->
+  <section class="stream-section" id="stream">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-label">Remote Play</div>
+        <h2 class="section-title">Browser Stream</h2>
+        <p class="section-desc">Connect to your PC and stream games directly in the browser via WebRTC. No app needed.</p>
+      </div>
+
+      <div class="stream-layout">
+        <!-- Controls Panel -->
+        <div class="stream-controls">
+          <h3>⚡ Connect</h3>
+
+          <div class="input-row">
+            <div class="input-group">
+              <label for="hostIp">Host IP</label>
+              <input type="text" id="hostIp" placeholder="192.168.1.100">
+            </div>
+            <div class="input-group">
+              <label for="hostPort">Port</label>
+              <input type="text" id="hostPort" placeholder="8080" value="8080">
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label for="streamPassword">Password (optional)</label>
+            <input type="password" id="streamPassword" placeholder="Enter password">
+          </div>
+
+          <button class="btn btn-primary stream-connect-btn" id="connectBtn" onclick="toggleConnection()">
+            <span class="btn-label">Connect</span>
+            <span class="spinner"></span>
+          </button>
+
+          <button class="btn btn-danger stream-connect-btn" id="disconnectBtn" style="display:none" onclick="disconnect()">
+            Disconnect
+          </button>
+
+          <div class="stream-status" id="streamStatus">
+            <div class="status-dot offline"></div>
+            <span>Not connected</span>
+          </div>
+
+          <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border-subtle);">
+            <p style="font-size: 0.78rem; color: var(--text-tertiary); line-height: 1.6;">
+              Requires <a href="https://github.com/m1k1o/neko" target="_blank" rel="noopener">Neko</a> or a WebRTC-compatible streaming server running on your PC. 
+              <a href="setup-guide.html">See setup guide →</a>
+            </p>
+          </div>
+        </div>
+
+        <!-- Stream Viewport -->
+        <div class="stream-viewport" id="streamViewport">
+          <div class="stream-toolbar">
+            <button class="btn btn-ghost btn-sm" onclick="goFullscreen()" title="Fullscreen">⛶ Fullscreen</button>
+            <button class="btn btn-ghost btn-sm" onclick="reloadStream()" title="Reload">↻ Reload</button>
+          </div>
+          <div class="stream-viewport-placeholder" id="streamPlaceholder">
+            <div class="placeholder-icon">🖥️</div>
+            <h3>No Active Stream</h3>
+            <p>Enter your host IP and connect to start streaming. Your RTX 4070 Super handles all the encoding via NVENC.</p>
+          </div>
+          <iframe id="streamFrame" sandbox="allow-same-origin allow-scripts allow-forms" allowfullscreen></iframe>
+        </div>
+      </div>
+
+      <!-- Streaming Methods -->
+      <div class="methods-grid" id="moonlight">
+        <!-- Browser Stream Card -->
+        <div class="method-card recommended">
+          <div class="method-badge primary">Primary Method</div>
+          <h3>🌐 Browser Stream</h3>
+          <p>Stream directly in your browser via WebRTC. Works on any device without installing apps.</p>
+          <ul class="method-features">
+            <li>No app installation needed</li>
+            <li>Works on any device with a browser</li>
+            <li>WebRTC for low-latency streaming</li>
+            <li>NVENC hardware encoding via 4070 Super</li>
+            <li>Requires Neko server on your PC</li>
+          </ul>
+          <a href="#stream" class="btn btn-primary btn-sm">Connect Now</a>
+        </div>
+
+        <!-- Moonlight Card -->
+        <div class="method-card">
+          <div class="method-badge secondary">Native App</div>
+          <h3>🚀 Moonlight</h3>
+          <p>Lowest latency option. Uses NVIDIA GameStream protocol with dedicated NVENC encoding.</p>
+          <ul class="method-features">
+            <li>Lowest possible latency</li>
+            <li>Native GPU acceleration</li>
+            <li>Controller support built-in</li>
+            <li>Up to 4K 120fps HDR</li>
+            <li>Requires Moonlight app installed</li>
+          </ul>
+          <div class="download-links">
+            <a href="https://moonlight-stream.org/" target="_blank" rel="noopener" class="btn btn-ghost btn-sm">Download</a>
+            <button class="btn btn-ghost btn-sm" onclick="launchMoonlight()">Launch App</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Fullscreen Overlay -->
+  <div class="stream-fullscreen" id="fullscreenOverlay">
+    <button class="btn btn-ghost exit-fullscreen" onclick="exitFullscreen()">✕ Exit Fullscreen</button>
+    <iframe id="fullscreenFrame" allowfullscreen></iframe>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <p>NEXUS — RTX 4070 Super · Ryzen 7 7700X · 32GB DDR5</p>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

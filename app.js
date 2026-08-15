@@ -1,0 +1,406 @@
+// ============================================
+// NEXUS Gaming Portal — Application Logic
+// ============================================
+
+// --- Game Library Data ---
+const GAMES = [
+  {
+    id: 'fortnite',
+    title: 'Fortnite',
+    platform: 'Epic Games',
+    icon: '🏗️',
+    gradient: 'linear-gradient(135deg, hsl(230, 60%, 35%), hsl(270, 50%, 30%))',
+    moonlightApp: 'Fortnite',
+  },
+  {
+    id: 'valorant',
+    title: 'Valorant',
+    platform: 'Riot Games',
+    icon: '🎯',
+    gradient: 'linear-gradient(135deg, hsl(0, 65%, 35%), hsl(350, 50%, 20%))',
+    moonlightApp: 'Valorant',
+  },
+  {
+    id: 'minecraft',
+    title: 'Minecraft',
+    platform: 'Microsoft',
+    icon: '⛏️',
+    gradient: 'linear-gradient(135deg, hsl(120, 40%, 30%), hsl(30, 40%, 25%))',
+    moonlightApp: 'Minecraft Launcher',
+  },
+  {
+    id: 'gtav',
+    title: 'GTA V',
+    platform: 'Steam',
+    icon: '🚗',
+    gradient: 'linear-gradient(135deg, hsl(220, 20%, 18%), hsl(25, 70%, 35%))',
+    moonlightApp: 'Grand Theft Auto V',
+  },
+  {
+    id: 'rocket-league',
+    title: 'Rocket League',
+    platform: 'Epic Games',
+    icon: '🚀',
+    gradient: 'linear-gradient(135deg, hsl(210, 70%, 35%), hsl(25, 80%, 45%))',
+    moonlightApp: 'Rocket League',
+  },
+  {
+    id: 'cs2',
+    title: 'Counter-Strike 2',
+    platform: 'Steam',
+    icon: '💣',
+    gradient: 'linear-gradient(135deg, hsl(220, 15%, 15%), hsl(45, 70%, 40%))',
+    moonlightApp: 'Counter-Strike 2',
+  },
+  {
+    id: 'apex',
+    title: 'Apex Legends',
+    platform: 'Steam / EA',
+    icon: '🔺',
+    gradient: 'linear-gradient(135deg, hsl(0, 70%, 35%), hsl(350, 40%, 18%))',
+    moonlightApp: 'Apex Legends',
+  },
+  {
+    id: 'cyberpunk',
+    title: 'Cyberpunk 2077',
+    platform: 'Steam',
+    icon: '🌃',
+    gradient: 'linear-gradient(135deg, hsl(50, 80%, 40%), hsl(185, 80%, 35%))',
+    moonlightApp: 'Cyberpunk 2077',
+  },
+];
+
+// --- State ---
+let streamConnected = false;
+let currentStreamUrl = '';
+
+// --- DOM Ready ---
+document.addEventListener('DOMContentLoaded', () => {
+  renderGames(GAMES);
+  setupSearch();
+  setupMobileNav();
+  setupScrollAnimations();
+});
+
+// --- Render Games ---
+function renderGames(games) {
+  const grid = document.getElementById('gamesGrid');
+  if (!grid) return;
+
+  if (games.length === 0) {
+    grid.innerHTML = `
+      <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; color: var(--text-tertiary);">
+        <p style="font-size: 1.1rem; margin-bottom: 8px;">No games found</p>
+        <p style="font-size: 0.85rem;">Try a different search term</p>
+      </div>
+    `;
+    return;
+  }
+
+  grid.innerHTML = games.map((game, i) => `
+    <div class="game-card animate-in" style="animation-delay: ${i * 0.05}s">
+      <div class="game-card-banner" style="background: ${game.gradient}">
+        <span class="game-icon">${game.icon}</span>
+      </div>
+      <div class="game-card-body">
+        <div class="game-card-title">${game.title}</div>
+        <div class="game-card-platform">${game.platform}</div>
+        <div class="game-card-actions">
+          <button class="btn btn-primary btn-sm" onclick="streamGame('${game.id}')">
+            🌐 Stream
+          </button>
+          <button class="btn btn-secondary btn-sm" onclick="launchInMoonlight('${game.moonlightApp}')">
+            🚀 Moonlight
+          </button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// --- Search ---
+function setupSearch() {
+  const input = document.getElementById('gameSearch');
+  if (!input) return;
+
+  input.addEventListener('input', (e) => {
+    const query = e.target.value.toLowerCase().trim();
+    if (!query) {
+      renderGames(GAMES);
+      return;
+    }
+    const filtered = GAMES.filter(g =>
+      g.title.toLowerCase().includes(query) ||
+      g.platform.toLowerCase().includes(query)
+    );
+    renderGames(filtered);
+  });
+}
+
+// --- Stream Connection ---
+function toggleConnection() {
+  if (streamConnected) {
+    disconnect();
+    return;
+  }
+
+  const ip = document.getElementById('hostIp').value.trim();
+  const port = document.getElementById('hostPort').value.trim() || '8080';
+  const password = document.getElementById('streamPassword').value.trim();
+
+  if (!ip) {
+    shakeElement(document.getElementById('hostIp'));
+    return;
+  }
+
+  // Build connection URL
+  let url = `http://${ip}:${port}`;
+  if (password) {
+    url += `?pwd=${encodeURIComponent(password)}`;
+  }
+
+  connect(url);
+}
+
+function connect(url) {
+  const btn = document.getElementById('connectBtn');
+  const status = document.getElementById('streamStatus');
+  const dot = document.getElementById('statusDot');
+  const statusText = document.getElementById('statusText');
+
+  // Loading state
+  btn.classList.add('loading');
+  updateStatus(status, 'connecting', 'Connecting...');
+  dot.className = 'status-dot connecting';
+  statusText.textContent = 'Connecting';
+
+  // Simulate connection delay (in reality, iframe loading)
+  setTimeout(() => {
+    const frame = document.getElementById('streamFrame');
+    const placeholder = document.getElementById('streamPlaceholder');
+
+    frame.src = url;
+    currentStreamUrl = url;
+
+    frame.onload = () => {
+      streamConnected = true;
+      btn.classList.remove('loading');
+      btn.style.display = 'none';
+      document.getElementById('disconnectBtn').style.display = 'block';
+
+      placeholder.style.display = 'none';
+      frame.classList.add('active');
+
+      updateStatus(status, 'connected', 'Connected to ' + new URL(url).hostname);
+      dot.className = 'status-dot';
+      statusText.textContent = 'Streaming';
+    };
+
+    frame.onerror = () => {
+      btn.classList.remove('loading');
+      updateStatus(status, 'error', 'Connection failed');
+      dot.className = 'status-dot offline';
+      statusText.textContent = 'Error';
+    };
+
+    // Fallback timeout — iframe doesn't always fire onerror
+    setTimeout(() => {
+      if (!streamConnected) {
+        streamConnected = true;
+        btn.classList.remove('loading');
+        btn.style.display = 'none';
+        document.getElementById('disconnectBtn').style.display = 'block';
+
+        placeholder.style.display = 'none';
+        frame.classList.add('active');
+
+        updateStatus(status, 'connected', 'Connected to ' + new URL(url).hostname);
+        dot.className = 'status-dot';
+        statusText.textContent = 'Streaming';
+      }
+    }, 3000);
+  }, 500);
+}
+
+function disconnect() {
+  const frame = document.getElementById('streamFrame');
+  const placeholder = document.getElementById('streamPlaceholder');
+  const status = document.getElementById('streamStatus');
+  const dot = document.getElementById('statusDot');
+  const statusText = document.getElementById('statusText');
+
+  frame.src = '';
+  frame.classList.remove('active');
+  placeholder.style.display = 'flex';
+
+  document.getElementById('disconnectBtn').style.display = 'none';
+  document.getElementById('connectBtn').style.display = 'block';
+
+  streamConnected = false;
+  currentStreamUrl = '';
+
+  updateStatus(status, '', 'Not connected');
+  dot.className = 'status-dot offline';
+  statusText.textContent = 'Ready';
+}
+
+function updateStatus(el, state, message) {
+  el.className = 'stream-status';
+  if (state === 'connected') el.classList.add('connected');
+  if (state === 'error') el.classList.add('error');
+
+  const dotClass = state === 'connected' ? '' :
+                   state === 'connecting' ? 'connecting' : 'offline';
+
+  el.innerHTML = `
+    <div class="status-dot ${dotClass}"></div>
+    <span>${message}</span>
+  `;
+}
+
+// --- Stream Game (scroll to stream + auto-fill) ---
+function streamGame(gameId) {
+  const game = GAMES.find(g => g.id === gameId);
+  if (!game) return;
+
+  document.getElementById('stream').scrollIntoView({ behavior: 'smooth' });
+
+  // Highlight the stream section briefly
+  const controls = document.querySelector('.stream-controls');
+  controls.style.borderColor = 'hsla(190, 95%, 50%, 0.3)';
+  setTimeout(() => {
+    controls.style.borderColor = '';
+  }, 2000);
+}
+
+// --- Moonlight Launch ---
+function launchInMoonlight(appName) {
+  // Attempt moonlight:// protocol
+  const url = `moonlight://`;
+  
+  // Show user-friendly message since protocol links are unreliable
+  const confirmed = confirm(
+    `Launch "${appName}" via Moonlight?\n\n` +
+    `This will attempt to open the Moonlight app. ` +
+    `If it doesn't open, make sure Moonlight is installed.`
+  );
+
+  if (confirmed) {
+    window.location.href = url;
+  }
+}
+
+function launchMoonlight() {
+  window.location.href = 'moonlight://';
+}
+
+// --- Fullscreen ---
+function goFullscreen() {
+  if (!streamConnected || !currentStreamUrl) return;
+
+  const overlay = document.getElementById('fullscreenOverlay');
+  const frame = document.getElementById('fullscreenFrame');
+
+  frame.src = currentStreamUrl;
+  overlay.classList.add('active');
+  document.body.style.overflow = 'hidden';
+
+  // Also try native fullscreen API
+  if (overlay.requestFullscreen) {
+    overlay.requestFullscreen();
+  }
+}
+
+function exitFullscreen() {
+  const overlay = document.getElementById('fullscreenOverlay');
+  const frame = document.getElementById('fullscreenFrame');
+
+  overlay.classList.remove('active');
+  frame.src = '';
+  document.body.style.overflow = '';
+
+  if (document.fullscreenElement) {
+    document.exitFullscreen();
+  }
+}
+
+// Listen for ESC key to exit fullscreen
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    const overlay = document.getElementById('fullscreenOverlay');
+    if (overlay.classList.contains('active')) {
+      exitFullscreen();
+    }
+  }
+});
+
+function reloadStream() {
+  if (!streamConnected || !currentStreamUrl) return;
+  const frame = document.getElementById('streamFrame');
+  frame.src = currentStreamUrl;
+}
+
+// --- Mobile Nav ---
+function setupMobileNav() {
+  const toggle = document.getElementById('navToggle');
+  const links = document.getElementById('navLinks');
+
+  if (!toggle || !links) return;
+
+  toggle.addEventListener('click', () => {
+    links.classList.toggle('open');
+    toggle.textContent = links.classList.contains('open') ? '✕' : '☰';
+  });
+
+  // Close nav on link click
+  links.querySelectorAll('a').forEach(link => {
+    link.addEventListener('click', () => {
+      links.classList.remove('open');
+      toggle.textContent = '☰';
+    });
+  });
+}
+
+// --- Scroll Animations ---
+function setupScrollAnimations() {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.style.animationPlayState = 'running';
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.animate-in').forEach(el => {
+    el.style.animationPlayState = 'paused';
+    observer.observe(el);
+  });
+}
+
+// --- Utility: Shake Animation ---
+function shakeElement(el) {
+  el.style.borderColor = 'var(--danger)';
+  el.style.animation = 'shake 0.4s ease';
+  el.focus();
+
+  setTimeout(() => {
+    el.style.borderColor = '';
+    el.style.animation = '';
+  }, 500);
+
+  // Add shake keyframes if not already added
+  if (!document.getElementById('shake-style')) {
+    const style = document.createElement('style');
+    style.id = 'shake-style';
+    style.textContent = `
+      @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        20% { transform: translateX(-6px); }
+        40% { transform: translateX(6px); }
+        60% { transform: translateX(-4px); }
+        80% { transform: translateX(4px); }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+}
