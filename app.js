@@ -70,8 +70,15 @@ const GAMES = [
   },
 ];
 
-// --- Web Apps (opened on the streamed desktop, not embedded here) ---
+// --- Web Apps (opened in a new tab — none of these allow framing) ---
 const WEB_APPS = [
+  {
+    title: 'Xbox Cloud',
+    subtitle: 'Game Pass · runs in browser',
+    url: 'https://www.xbox.com/play',
+    icon: '🎮',
+    gradient: 'linear-gradient(135deg, hsl(120, 45%, 30%), hsl(140, 40%, 18%))',
+  },
   {
     title: 'Gemini',
     subtitle: 'Google AI',
