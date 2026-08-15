@@ -159,7 +159,31 @@ function toggleConnection() {
     url += `?pwd=${encodeURIComponent(password)}`;
   }
 
+  // A page served over HTTPS cannot embed an http:// frame: browsers block it as
+  // active mixed content with no prompt and no override. Say so instead of
+  // starting a load that can never complete.
+  if (window.location.protocol === 'https:') {
+    showStreamError(
+      `Blocked: this page is served over HTTPS, so the browser will not embed the ` +
+      `insecure stream at http://${ip}:${port}. Open the portal locally, or expose ` +
+      `Neko over HTTPS (Tailscale Funnel or Cloudflare Tunnel) and use that hostname.`
+    );
+    return;
+  }
+
   connect(url);
+}
+
+function showStreamError(message) {
+  const btn = document.getElementById('connectBtn');
+
+  btn.classList.remove('loading');
+  btn.style.display = 'block';
+  document.getElementById('disconnectBtn').style.display = 'none';
+
+  updateStatus(document.getElementById('streamStatus'), 'error', message);
+  document.getElementById('statusDot').className = 'status-dot offline';
+  document.getElementById('statusText').textContent = 'Error';
 }
 
 function connect(url) {
@@ -197,28 +221,21 @@ function connect(url) {
     };
 
     frame.onerror = () => {
-      btn.classList.remove('loading');
-      updateStatus(status, 'error', 'Connection failed');
-      dot.className = 'status-dot offline';
-      statusText.textContent = 'Error';
+      frame.src = '';
+      showStreamError('Connection failed — could not reach ' + new URL(url).hostname + '.');
     };
 
-    // Fallback timeout — iframe doesn't always fire onerror
+    // Fallback timeout — iframes don't reliably fire onerror. A load that never
+    // completes is a failure; reporting it as success hides the actual problem.
     setTimeout(() => {
       if (!streamConnected) {
-        streamConnected = true;
-        btn.classList.remove('loading');
-        btn.style.display = 'none';
-        document.getElementById('disconnectBtn').style.display = 'block';
-
-        placeholder.style.display = 'none';
-        frame.classList.add('active');
-
-        updateStatus(status, 'connected', 'Connected to ' + new URL(url).hostname);
-        dot.className = 'status-dot';
-        statusText.textContent = 'Streaming';
+        frame.src = '';
+        showStreamError(
+          'Connection failed — no response from ' + new URL(url).hostname +
+          '. Check that the Neko container is running and reachable on this network.'
+        );
       }
-    }, 3000);
+    }, 8000);
   }, 500);
 }
 
@@ -252,10 +269,14 @@ function updateStatus(el, state, message) {
   const dotClass = state === 'connected' ? '' :
                    state === 'connecting' ? 'connecting' : 'offline';
 
-  el.innerHTML = `
-    <div class="status-dot ${dotClass}"></div>
-    <span>${message}</span>
-  `;
+  // message can carry a user-supplied hostname, so build the node rather than
+  // interpolating into innerHTML.
+  el.innerHTML = '';
+  const statusDot = document.createElement('div');
+  statusDot.className = `status-dot ${dotClass}`;
+  const label = document.createElement('span');
+  label.textContent = message;
+  el.append(statusDot, label);
 }
 
 // --- Stream Game (scroll to stream + auto-fill) ---
