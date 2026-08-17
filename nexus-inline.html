@@ -1121,7 +1121,7 @@ section {
 
           <div class="input-group">
             <label for="hostIp">Host or URL</label>
-            <input type="text" id="hostIp" placeholder="pc.your-tailnet.ts.net">
+            <input type="text" id="hostIp" placeholder="pc.your-tailnet.ts.net" value="https://pockets-ranges-isolated-charlotte.trycloudflare.com">
           </div>
           <div class="input-group">
             <label for="hostPort">Port <span style="color: var(--text-tertiary); font-weight: 400;">(LAN IP only)</span></label>
@@ -1142,6 +1142,12 @@ section {
             Disconnect
           </button>
 
+          <div style="margin-top: 8px;">
+            <button class="btn btn-secondary stream-connect-btn" onclick="openInNewTab()" style="font-size: 0.8rem;">
+              ↗ Open Stream in New Tab
+            </button>
+          </div>
+
           <div class="stream-status" id="streamStatus">
             <div class="status-dot offline"></div>
             <span>Not connected</span>
@@ -1149,8 +1155,8 @@ section {
 
           <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border-subtle);">
             <p style="font-size: 0.78rem; color: var(--text-tertiary); line-height: 1.6;">
-              Requires <a href="https://github.com/m1k1o/neko" target="_blank" rel="noopener">Neko</a> or a WebRTC-compatible streaming server running on your PC. 
-              <a href="setup-guide.html">See setup guide →</a>
+              Streams via moonlight-web through Cloudflare Tunnel.
+              If the iframe is blocked, use "Open in New Tab" above.
             </p>
           </div>
         </div>
@@ -1416,6 +1422,21 @@ function setupSearch() {
     );
     renderGames(filtered);
   });
+}
+
+// --- Open stream in a new tab (fallback for sandboxed iframes) ---
+function openInNewTab() {
+  const host = document.getElementById('hostIp').value.trim();
+  const port = document.getElementById('hostPort').value.trim() || '8080';
+  const password = document.getElementById('streamPassword').value.trim();
+
+  if (!host) {
+    shakeElement(document.getElementById('hostIp'));
+    return;
+  }
+
+  const url = buildStreamUrl(host, port, password);
+  window.open(url, '_blank');
 }
 
 // --- Stream Connection ---
